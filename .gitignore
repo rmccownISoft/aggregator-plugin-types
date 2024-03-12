@@ -1,0 +1,9 @@
+node_modules/
+*.txt
+*.env
+*.list
+workspace.code-workspace
+dev/
+portainer_stack.yml
+portainer_stack_volume.yml
+*.yml
