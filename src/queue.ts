@@ -58,7 +58,11 @@ export abstract class QueuePlugin<T, U extends string> {
 	 * Most early plugins use an array of table names and binlog event types to determine if it will be processed or skipped.
 	 */
 	abstract setInitialTaskStatus: (data: any) => QueueTaskStatus
-	// Handles a task retrieved from sqlite queue
+	/**
+	 * Handles a task retrieved from sqlite queue
+	 * @param {QueueTask}
+	 * Most early plugins check an array of event types and functions to call for each
+	 */
 	abstract processTask: (task: QueueTask<T, U>) => void
 
 	// TODO: There might need to be a required function to update to final status
