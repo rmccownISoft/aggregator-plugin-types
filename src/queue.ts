@@ -51,8 +51,15 @@ export abstract class QueuePlugin<T, U extends string> {
 
 	status: 'idle' | 'processing' = 'idle'
 	
-	// TODO: this name throws me off every time
+	/*
+		Called by the queue manager on every binlog event.
+		Data is usually a binlog event, response is a status indicating whether 
+		the event is to be processed by setting to 'pending' otherwise 'skipped'.
+		Most early plugins use an array of table names and binlog event types to determine
+		if it will be processed or skipped.
+	*/
 	abstract setInitialTaskStatus: (data: any) => QueueTaskStatus
+	// Handles a task retrieved from sqlite queue
 	abstract processTask: (task: QueueTask<T, U>) => void
 
 	// TODO: There might need to be a required function to update to final status
