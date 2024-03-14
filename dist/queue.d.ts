@@ -8,7 +8,7 @@ export declare class QueueManager<Row, U extends string> {
     saveTask: (task: QueueTask<Row, U>) => void;
     updateQueueTaskStatus: (task: QueueTask<Row, U>, pluginName: U, status: QueueTaskStatus) => void;
     /**
-     * Called by binlog event emitter
+     * Called by binlog event emitter callback
      * @param convertedEvent
      * Converts the binlog event to a task, passes to the plugins to handle
      * Plugin is responsible for setting status to 'pending' for later processing or 'skipped'
