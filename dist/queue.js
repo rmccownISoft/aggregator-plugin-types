@@ -11,14 +11,13 @@ exports.QueueTask = exports.QueuePlugin = exports.QueueManager = void 0;
 class QueueManager {
     constructor() {
         this.plugins = [];
-        /*
-            Called in binlog event emitter callback.
-            Converts the binlog event to a task, passes it to the plugins to decide to handle or not
-            Plugin will set status 'pending' for later processing or 'skipped'
-            The task is then saved to the sqlite db as a job with an object representing each plugins response
-            to processing or not.
-            Finally, each of the plugins are told to get and process the next job (if any)
-        */
+        /**
+         * Called by binlog event emitter
+         * @param convertedEvent
+         * Converts the binlog event to a task, passes to the plugins to handle
+         * Plugin is responsible for setting status to 'pending' for later processing or 'skipped'
+         * Also responsible for kicking off the plugin's job handler
+         */
         this.enqueue = (convertedEvent) => {
             const task = new QueueTask(convertedEvent);
             // Run task through plugin filters
