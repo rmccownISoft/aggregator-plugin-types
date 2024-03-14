@@ -15,7 +15,7 @@ export declare abstract class QueuePlugin<T, U extends string> {
     readonly queue: QueueManager<T, U>;
     constructor(name: U, queue: QueueManager<T, U>);
     status: 'idle' | 'processing';
-    abstract getInitialStatus: (data: any) => QueueTaskStatus;
+    abstract setInitialTaskStatus: (data: any) => QueueTaskStatus;
     abstract processTask: (task: QueueTask<T, U>) => void;
     complete: (task: QueueTask<T, U>) => Promise<void>;
     getNextTask: () => QueueTask<T, U> | undefined;

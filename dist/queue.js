@@ -7,10 +7,18 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _QueueManager_kickAllPlugins;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueueTask = exports.QueuePlugin = exports.QueueManager = void 0;
+// TODO: get row, column and other event types from mysqlevents module
 class QueueManager {
     constructor() {
         this.plugins = [];
-        // Runs task through plugin filters, saves to db/queue with statuses and kicks off the plugins
+        /*
+            Called in binlog event emitter callback.
+            Converts the binlog event to a task, passes it to the plugins to decide to handle or not
+            Plugin will set status 'pending' for later processing or 'skipped'
+            The task is then saved to the sqlite db as a job with an object representing each plugins response
+            to processing or not.
+            Finally, each of the plugins are told to get and process the next job (if any)
+        */
         this.enqueue = (convertedEvent) => {
             const task = new QueueTask(convertedEvent);
             // Run task through plugin filters
@@ -81,7 +89,7 @@ class QueueTask {
         this.statuses = {};
         this.initializeStatuses = (plugins) => {
             plugins.forEach((plugin) => {
-                this.statuses[plugin.name] = plugin.getInitialStatus(this.task);
+                this.statuses[plugin.name] = plugin.setInitialTaskStatus(this.task);
             });
         };
         this.setStatus = (pluginName, status) => {

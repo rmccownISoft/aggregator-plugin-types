@@ -3,26 +3,7 @@ export type QueueTaskStatusObject = Record<string, QueueTaskStatus>
 
 // TODO: get row, column and other event types from mysqlevents module
 
-// Sqlite database row
-type Row = {
-	id?: string,
-	changeEvent: any,
-    statuses?: any
-}
 
-// Emitted by binlog watcher
-type BinlogEvent = {
-    changeData: any,
-    columns: any,
-    database: string,
-    filename: string,
-    nextPosition: string,
-    productCode: string,
-    rows: any,
-    table: string,
-    timestamp: string,
-    type: 'updaterows' | 'insertrows' | 'deleterows'
-}
 
 export class QueueManager<Row, U extends string > {
 	protected plugins: QueuePlugin<Row, U>[] = []
@@ -36,7 +17,14 @@ export class QueueManager<Row, U extends string > {
 	// Update the status object on a task
 	updateQueueTaskStatus: (task: QueueTask<Row, U>, pluginName: U, status: QueueTaskStatus) => void
 
-	// Runs task through plugin filters, saves to db/queue with statuses and kicks off the plugins
+	/*
+		Called in binlog event emitter callback.
+		Converts the binlog event to a task, passes it to the plugins to decide to handle or not
+		Plugin will set status 'pending' for later processing or 'skipped' 
+		The task is then saved to the sqlite db as a job with an object representing each plugins response
+		to processing or not.
+		Finally, each of the plugins are told to get and process the next job (if any)
+	*/
 	enqueue = (convertedEvent: Row) => { 
 		const task = new QueueTask<Row, U>(convertedEvent)
 		// Run task through plugin filters
@@ -64,7 +52,7 @@ export abstract class QueuePlugin<T, U extends string> {
 	status: 'idle' | 'processing' = 'idle'
 	
 	// TODO: this name throws me off every time
-	abstract getInitialStatus: (data: any) => QueueTaskStatus
+	abstract setInitialTaskStatus: (data: any) => QueueTaskStatus
 	abstract processTask: (task: QueueTask<T, U>) => void
 
 	// TODO: There might need to be a required function to update to final status
@@ -117,7 +105,7 @@ export class QueueTask<Row, U extends string> {
 
 	initializeStatuses = (plugins: QueuePlugin<Row, U>[]): void => {
 		plugins.forEach((plugin) => {
-			this.statuses[plugin.name] = plugin.getInitialStatus(this.task)
+			this.statuses[plugin.name] = plugin.setInitialTaskStatus(this.task)
 		})
 	}
 
