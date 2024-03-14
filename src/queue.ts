@@ -17,14 +17,13 @@ export class QueueManager<Row, U extends string > {
 	// Update the status object on a task
 	updateQueueTaskStatus: (task: QueueTask<Row, U>, pluginName: U, status: QueueTaskStatus) => void
 
-	/*
-		Called in binlog event emitter callback.
-		Converts the binlog event to a task, passes it to the plugins to decide to handle or not
-		Plugin will set status 'pending' for later processing or 'skipped' 
-		The task is then saved to the sqlite db as a job with an object representing each plugins response
-		to processing or not.
-		Finally, each of the plugins are told to get and process the next job (if any)
-	*/
+	/**
+	 * Called by binlog event emitter
+	 * @param convertedEvent 
+	 * Converts the binlog event to a task, passes to the plugins to handle
+	 * Plugin is responsible for setting status to 'pending' for later processing or 'skipped'
+	 * Also responsible for kicking off the plugin's job handler
+	 */
 	enqueue = (convertedEvent: Row) => { 
 		const task = new QueueTask<Row, U>(convertedEvent)
 		// Run task through plugin filters
@@ -51,13 +50,13 @@ export abstract class QueuePlugin<T, U extends string> {
 
 	status: 'idle' | 'processing' = 'idle'
 	
-	/*
-		Called by the queue manager on every binlog event.
-		Data is usually a binlog event, response is a status indicating whether 
-		the event is to be processed by setting to 'pending' otherwise 'skipped'.
-		Most early plugins use an array of table names and binlog event types to determine
-		if it will be processed or skipped.
-	*/
+	
+	/**
+	 * Called by the queue manager on every binlog event.
+	 * @param {Object} data - Usually a binlog event.
+	 * @param {string} response - A status indicating whether the event is to be processed by setting to 'pending' otherwise 'skipped'.
+	 * Most early plugins use an array of table names and binlog event types to determine if it will be processed or skipped.
+	 */
 	abstract setInitialTaskStatus: (data: any) => QueueTaskStatus
 	// Handles a task retrieved from sqlite queue
 	abstract processTask: (task: QueueTask<T, U>) => void
