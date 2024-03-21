@@ -45,12 +45,12 @@ class QueuePlugin {
         this.queue = queue;
         this.status = 'idle';
         // TODO: There might need to be a required function to update to final status
-        this.complete = async (task) => {
-            await this.queue.updateQueueTaskStatus(task, this.name, 'done');
-            task.setStatus(this.name, 'done');
-            task.statuses[this.name] = 'done';
-            console.log('task complete: ', task);
-        };
+        // complete = async (task: QueueTask<T,U>): Promise<void> => {
+        // 	await this.queue.updateQueueTaskStatus(task, this.name, 'done')
+        // 	task.setStatus(this.name, 'done')
+        // 	task.statuses[this.name] = 'done'
+        // 	console.log('task complete: ', task)
+        // }
         // Calls the queue's implemented getNextTaskFor method
         this.getNextTask = () => {
             return this.queue.getNextTaskFor(this.name);
@@ -68,7 +68,7 @@ class QueuePlugin {
                     await this.processTask(currentTask);
                 }
                 catch (error) {
-                    console.error('Error in processTask loop: ', error);
+                    console.error('Error in process task loop: ', error);
                 }
                 finally {
                     await this.complete(currentTask);

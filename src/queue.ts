@@ -10,7 +10,7 @@ export class QueueManager<Row, U extends string > {
 
 	// Gets next task for a plugin 
 	getNextTaskFor: (pluginName: U) => QueueTask<Row, U> | undefined
-	// Remove completed jobs from db/queue 
+	// Remove tasks from db/queue with status 'prune'
 	prune: () => void
 	// Save task to db/queue
 	saveTask: (task: QueueTask<Row, U>) => void
@@ -65,15 +65,15 @@ export abstract class QueuePlugin<T, U extends string> {
 	 * Most early plugins check an array of event types and functions to call for each
 	 */
 	abstract processTask: (task: QueueTask<T, U>) => void
-
+	abstract complete: (task: QueueTask<T, U>) => void
 	// TODO: There might need to be a required function to update to final status
 
-	complete = async (task: QueueTask<T,U>): Promise<void> => {
-		await this.queue.updateQueueTaskStatus(task, this.name, 'done')
-		task.setStatus(this.name, 'done')
-		task.statuses[this.name] = 'done'
-		console.log('task complete: ', task)
-	}
+	// complete = async (task: QueueTask<T,U>): Promise<void> => {
+	// 	await this.queue.updateQueueTaskStatus(task, this.name, 'done')
+	// 	task.setStatus(this.name, 'done')
+	// 	task.statuses[this.name] = 'done'
+	// 	console.log('task complete: ', task)
+	// }
 	// Calls the queue's implemented getNextTaskFor method
 	getNextTask = (): QueueTask<T, U> | undefined => {
 		return this.queue.getNextTaskFor(this.name)
@@ -93,7 +93,7 @@ export abstract class QueuePlugin<T, U extends string> {
 			try {
 				await this.processTask(currentTask)
 			} catch (error) {
-				console.error('Error in processTask loop: ', error)
+				console.error('Error in process task loop: ', error)
 			} finally {
 				await this.complete(currentTask)
 
