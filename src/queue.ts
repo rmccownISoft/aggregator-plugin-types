@@ -65,15 +65,14 @@ export abstract class QueuePlugin<T, U extends string> {
 	 * Most early plugins check an array of event types and functions to call for each
 	 */
 	abstract processTask: (task: QueueTask<T, U>) => void
-	abstract complete: (task: QueueTask<T, U>) => void
 	// TODO: There might need to be a required function to update to final status
 
-	// complete = async (task: QueueTask<T,U>): Promise<void> => {
-	// 	await this.queue.updateQueueTaskStatus(task, this.name, 'done')
-	// 	task.setStatus(this.name, 'done')
-	// 	task.statuses[this.name] = 'done'
-	// 	console.log('task complete: ', task)
-	// }
+	complete = async (task: QueueTask<T,U>): Promise<void> => {
+		await this.queue.updateQueueTaskStatus(task, this.name, 'done')
+		task.setStatus(this.name, 'done')
+		task.statuses[this.name] = 'done'
+		
+	}
 	// Calls the queue's implemented getNextTaskFor method
 	getNextTask = (): QueueTask<T, U> | undefined => {
 		return this.queue.getNextTaskFor(this.name)
