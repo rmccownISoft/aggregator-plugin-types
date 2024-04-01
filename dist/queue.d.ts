@@ -35,7 +35,7 @@ export declare abstract class QueuePlugin<T, U extends string> {
      * Most early plugins check an array of event types and functions to call for each
      */
     abstract processTask: (task: QueueTask<T, U>) => void;
-    abstract complete: (task: QueueTask<T, U>) => void;
+    complete: (task: QueueTask<T, U>) => Promise<void>;
     getNextTask: () => QueueTask<T, U> | undefined;
     kick: () => void;
     loop: () => Promise<void>;
