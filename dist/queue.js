@@ -44,6 +44,7 @@ class QueuePlugin {
         this.name = name;
         this.queue = queue;
         this.status = 'idle';
+        this.waitingForSync = false;
         // TODO: There might need to be a required function to update to final status
         this.complete = async (task) => {
             await this.queue.updateQueueTaskStatus(task, this.name, 'done');
@@ -55,27 +56,37 @@ class QueuePlugin {
             return this.queue.getNextTaskFor(this.name);
         };
         this.kick = () => {
-            if (this.status === 'idle') {
+            // Needed additional flag to handle the interruption of an optional resync which takes priority
+            if (this.status === 'idle' && !this.waitingForSync) {
                 this.loop();
             }
         };
+        // Since loop can get called by itself, it also needs to only proceed if not waitingForSync.
+        // Syncing is considered a higher priority so it should also be responsible for managing the waitingForSync flag
         this.loop = async () => {
-            this.status = 'processing';
-            const currentTask = this.getNextTask();
-            if (currentTask) {
-                try {
-                    await this.processTask(currentTask);
-                }
-                catch (error) {
-                    console.error('Error in process task loop: ', error);
-                }
-                finally {
-                    await this.complete(currentTask);
-                }
-                this.loop();
+            // This should only be possible if called by itself after processing a task when aresync was requested
+            if (this.waitingForSync) {
+                // Set status to idle so that resync can take over
+                this.status = 'idle';
             }
             else {
-                this.status = 'idle';
+                this.status = 'processing';
+                const currentTask = this.getNextTask();
+                if (currentTask) {
+                    try {
+                        await this.processTask(currentTask);
+                    }
+                    catch (error) {
+                        console.error('Error in process task loop: ', error);
+                    }
+                    finally {
+                        await this.complete(currentTask);
+                    }
+                    this.loop();
+                }
+                else {
+                    this.status = 'idle';
+                }
             }
         };
     }

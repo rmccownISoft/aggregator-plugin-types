@@ -1,5 +1,5 @@
-export declare type QueueTaskStatus = 'pending' | 'processing' | 'done' | 'failed' | 'skipped' | 'prune';
-export declare type QueueTaskStatusObject = Record<string, QueueTaskStatus>;
+export type QueueTaskStatus = 'pending' | 'processing' | 'done' | 'failed' | 'skipped' | 'prune';
+export type QueueTaskStatusObject = Record<string, QueueTaskStatus>;
 export declare class QueueManager<Row, U extends string> {
     #private;
     protected plugins: QueuePlugin<Row, U>[];
@@ -22,6 +22,7 @@ export declare abstract class QueuePlugin<T, U extends string> {
     readonly queue: QueueManager<T, U>;
     constructor(name: U, queue: QueueManager<T, U>);
     status: 'idle' | 'processing';
+    waitingForSync: boolean;
     /**
      * Called by the queue manager on every binlog event.
      * @param {Object} data - Usually a binlog event.
