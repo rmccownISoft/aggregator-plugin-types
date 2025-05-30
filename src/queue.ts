@@ -50,8 +50,7 @@ export abstract class QueuePlugin<T, U extends string> {
 	constructor (public readonly name: U, public readonly queue: QueueManager<T, U>) {}
 
 	status: 'idle' | 'processing' = 'idle'
-	
-	
+	waitingForSync: boolean = false
 	/**
 	 * Called by the queue manager on every binlog event.
 	 * @param {Object} data - Usually a binlog event.
@@ -79,27 +78,36 @@ export abstract class QueuePlugin<T, U extends string> {
 	}	
 
 	kick = (): void => {
-		if (this.status === 'idle') {
+		// Needed additional flag to handle the interruption of an optional resync which takes priority
+		if (this.status === 'idle' && !this.waitingForSync) {
 			this.loop()
 		}
 	}
 
+	// Since loop can get called by itself, it also needs to only proceed if not waitingForSync.
+	// Syncing is considered a higher priority so it should also be responsible for managing the waitingForSync flag
 	loop = async (): Promise<void> => {
-		this.status = 'processing'
-		const currentTask = this.getNextTask()
-		
-		if (currentTask) {
-			try {
-				await this.processTask(currentTask)
-			} catch (error) {
-				console.error('Error in process task loop: ', error)
-			} finally {
-				await this.complete(currentTask)
-
-			}
-			this.loop()
-		} else {
+		// This should only be possible if called by itself after processing a task when aresync was requested
+		if (this.waitingForSync) {
+			// Set status to idle so that resync can take over
 			this.status = 'idle'
+		} else {
+			this.status = 'processing'
+			const currentTask = this.getNextTask()
+		
+			if (currentTask) {
+				try {
+					await this.processTask(currentTask)
+				} catch (error) {
+					console.error('Error in process task loop: ', error)
+				} finally {
+					await this.complete(currentTask)
+
+				}
+				this.loop()
+			} else {
+				this.status = 'idle'
+			}
 		}
 	}
 }
